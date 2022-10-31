@@ -1,6 +1,6 @@
-#vim:set ft=dockerfile
-FROM debian:stable-slim
-MAINTAINER Julien Rouhaud <rjuju123@gmail.com>
+# syntax=docker/dockerfile:1.3-labs
+FROM ubuntu:22.04
+MAINTAINER Richard Phillis <rphillis@studiosity.com>
 
 WORKDIR /usr/local/src
 
@@ -11,12 +11,32 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     python3-pip \
     git \
-    && git clone https://github.com/powa-team/powa-web.git powa-web.git \
     && pip3 install psycopg2 sqlalchemy tornado \
-    && apt-get purge -y --auto-remove libpq-dev python3-dev python3-pip git \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd app \
+    && mkdir -p /home/app \
+    && chown app /home/app \
+    && git clone https://github.com/binocvlar/powa-web.git powa-web.git \
+    && apt-get purge -y --auto-remove libpq-dev python3-dev python3-pip git
 
-COPY powa-web.conf /etc/
+COPY <<-"EOF" /etc/powa-web.conf
+
+servers={
+  'prd-pgl-09.yak.run': {
+    'host': 'prd-pgl-09.yak.run',
+    'port': '5432',
+    'database': 'powa',
+  },
+  'prd-pgl-10.yak.run': {
+    'host': 'prd-pgl-10.yak.run',
+    'port': '5432',
+    'database': 'powa',
+  },
+}
+cookie_secret="<REDACTED>"
+EOF
+
+USER app
 
 EXPOSE 8888
 CMD ["python3", "powa-web.git/run_powa.py"]

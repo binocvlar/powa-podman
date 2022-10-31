@@ -307,7 +307,14 @@ if should_be_built "powa-web-git"; then
 
     BASEDIR="${DIRNAME}/powa-web-git"
 
+    # Set a new cookie secret on each build
+    # This avoids storing the secret in Git
+    cookie_secret=$(head -c50 /dev/urandom | base64)
+    git checkout ${BASEDIR}/Containerfile
+    sed -ri "s,^(cookie_secret=)\"<REDACTED>\"$,\1\"${cookie_secret}\"," "${BASEDIR}/Containerfile"
+
     build_image "powa-web-git" "latest" "${BASEDIR}"
+    git checkout ${BASEDIR}/Containerfile
 fi
 
 if should_be_built "powa-collector"; then
